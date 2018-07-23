@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>Point cloud view</title>
+		<meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+        <!-- <script src="https://rawgithub.com/mrdoob/three.js/master/build/three.js"></script>  -->
+        <script src="js/three.js"></script>
+		<script src="js/Detector.js"></script>
+        <script src="js/stats.min.js"></script>
+        <script src="js/jquery.min.js"></script>
+        <script src="js/axios.min.js"></script>
+		<style>
+			body {
+				color: #cccccc;
+				font-family:Monospace;
+				font-size:13px;
+				text-align:center;
+				background-color: #050505;
+				margin: 0px;
+				overflow: hidden;
+			}
+			#info {
+				position: absolute;
+				top: 0px; width: 100%;
+				padding: 5px;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="container"></div>
+		<div id="info"> Point Cloud 
+			<!-- <button id="stopAnimation">Stop</button> -->
+		</div>
+		<script>
+            //get the point cloud data
+			var serverurl = 'http://www.hiksea.com:8091';
+            var cloudData;
+            function getUrlParam(name) {  
+                var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)"); // 含有目标参数的正则表达式对象  
+                var r = window.location.search.substr(1).match(reg);  // 匹配目标参数  
+                if (r != null) return unescape(r[2]); return null; // 返回参数值  
+            }
+            console.log(getUrlParam('id'))
+            axios.get(serverurl + '/drawPoint', {
+                params: { 'id': Number(getUrlParam('id')) }
+            }).then(function (response) {
+                cloudData = response.data;
+                console.log(cloudData);
+                init(cloudData);
+                animate();
+            }).catch(function (error) {
+                // console.log(error);
+                window.alert(error);
+            });
+			//stop the rotate
+			$("#stopAnimation").click(function(){
+                animate1();
+            });
+
+            //init 3D varable
+			if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
+			var container, stats;
+			var camera, scene, renderer;
+			var points;
+            
+            //init the scene
+			function init(pointCloudData) {
+                console.log("init data:",pointCloudData)
+				container = document.getElementById( 'container' );
+				// define camera,scene, geometry
+				camera = new THREE.PerspectiveCamera( 27, window.innerWidth / window.innerHeight, 5, 3500 );
+				camera.position.z = 2200;
+				scene = new THREE.Scene();
+				scene.background = new THREE.Color( 0x050505 );
+				scene.fog = new THREE.Fog( 0x050505, 2000, 3500 );
+				//
+				// var particles = 2048;
+				var geometry = new THREE.BufferGeometry();
+				var positions = [];
+				var colors = [];
+				var color = new THREE.Color();
+				var n = 500 // particles spread
+				for ( var i = 0; i < pointCloudData.length; i ++ ) {
+                    // positions
+                    var x = pointCloudData[i][0] * n
+                    var y = pointCloudData[i][1] * n
+                    var z = pointCloudData[i][2] * n
+					// var x = Math.random() * n - n2;
+					// var y = Math.random() * n - n2;
+					// var z = Math.random() * n - n2;
+					positions.push( x, y, z );
+					// colors
+					var vx = ( x / n ) + 0.5;
+					var vy = ( y / n ) + 0.5;
+					var vz = ( z / n ) + 0.5;
+					color.setRGB( vx, vy, vz );
+					colors.push( color.r, color.g, color.b );
+				}
+				geometry.addAttribute( 'position', new THREE.Float32BufferAttribute( positions, 3 ) );
+				geometry.addAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3 ) );
+				geometry.computeBoundingSphere();
+				//材质
+				var material = new THREE.PointsMaterial( { size: 15, vertexColors: THREE.VertexColors } );
+				points = new THREE.Points( geometry, material );
+				scene.add( points );
+				//渲染
+				renderer = new THREE.WebGLRenderer();
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				container.appendChild( renderer.domElement );
+				//
+				stats = new Stats();
+				container.appendChild( stats.dom );
+				//
+				window.addEventListener( 'resize', onWindowResize, false );
+			}
+			function onWindowResize() {
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+				renderer.setSize( window.innerWidth, window.innerHeight );
+			}
+			//不停的对画面进行渲染
+			function animate() {
+                //让浏览器去执行一次参数中的函数,通常可能达到60FPS
+                requestAnimationFrame( animate );
+                // setTimeout("render()","6000");
+				render();
+				stats.update();
+			}
+			function render() {
+				var time = Date.now() * 0.001;
+				// points.rotation.x = time * 0.25;
+                // points.rotation.y = time * 0.8;
+                points.rotation.x = time * 0.5;
+                points.rotation.y = time * 0.5;
+                //这个循环就是渲染循环:结合相机和场景来得到结果画面,不断的调用render来重绘
+				renderer.render( scene, camera );
+            }
+		</script>
+
+	</body>
+</html>

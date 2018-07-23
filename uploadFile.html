@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+
+  <title>面向激光雷达点云的深度学习识别分类应用系统</title>
+  <meta charset="utf-8" />
+  <script src="js/vue.js"></script>
+  <!-- <script src="../js/vue-resource.js"></script> -->
+  <script src="js/jquery.min.js"></script>
+  <script src="js/axios.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="uploadFile.css" /> 
+  <link rel="stylesheet" href="pagination.css" type="text/css">
+</head>
+
+<body>
+  <div class="bg"><img src="image/xue1.jpg" alt=""></div>
+  <div id="app">
+    <div><label class="title_txt">面向激光雷达点云的深度学习识别分类应用系统</label></div>
+    <div class="buttonswrap">
+      <div id="mymodel" class="btnwrapper">
+        <div class="icons"><img src="image/pulldown.png" alt="pulldown"></div>
+        <select v-model="selected">
+            <option v-for="(model, index) in models">{{model}}</option>
+        </select>
+        <span>{{selected}}</span>
+        <button id="selectModelbtn" @click="changeModel">确定</button>
+      </div>
+      <div class="btnwrapper inputfile">
+        <input type="file" @change="getFile($event)" />{{Filename}}
+        <button id="uploadbtn" @click="upload">上传</button>
+      </div>
+      <div class="btnwrapper txt1">
+        <div class="showres">{{ predictRes }}</div>
+        <button id="exportbtn" @click="exportExcel">导出</button>
+          <!-- <a id="exportbtn"  v-on:click="exportExcel"><img src="image/exporticon.png" alt="导出"></a> -->
+      </div>
+      <div class="hintwrap">
+        <div class="hintwrapper" v-show="uping0==1">已更换模型</div>
+        <div class="hintwrapper" v-show="uping1==1">上传文件中</div>
+        <div class="hintwrapper" v-show="uping2==1">excel导出成功</div>
+      </div>
+    </div>
+    <div class="mask"></div>
+    <div class="predictionlist">
+      <ul>
+        <li>
+          <div class="reswrap1"></div>
+          <div class="reswrap2">预测概率</div>
+          <div class="reswrap">预测类型</div>
+          <div class="reswrap">实际类型</div>
+          <div class="reswrap">预测正误</div>
+        </li>
+        <li id="li2" v-for="(res, index) in results">
+          <div class="reswrap1"><a v-on:click="goToDraw($event)">{{index+1+(currentPage-1)*10}}</a></div>
+          <div class="reswrap2">{{res.probability}}</div>
+          <div class="reswrap">{{objectTypes[res.object1]}}</div>
+          <div class="reswrap">{{objectTypes[res.object2]}}</div>
+          <div class="reswrap txtalign" v-if="res.object1 == res.object2">Y</div>
+          <div class="reswrap txtalign" v-else>N</div>
+        </li>
+      </ul>
+    </div>
+
+    <div class="page_wrapper">
+      <ul class="pagination">
+      </ul>
+    </div>
+  </div>
+  <footer>@copyright 重庆大学, 王雪, 学号：20144502</footer>
+  
+<!-- <script type="text/javascript" src="js/common.js"></script> -->
+<script>
+  var vm = new Vue({
+    el: '#app',
+    data: {
+      upath: '', //file path
+      uping0:0,uping1:0,uping2:0, //control whether show
+      models:[], // model
+      selected:'',
+      Filename:'点击这里上传hdf5文件',
+      predictRes:'',
+      results:[],
+      objectTypes:['airplane','bathtub','bed','bench','bookshelf','bottle','bowl','car','chair','cone',
+      'cup','curtain','desk','door','dresser','flower_pot','glass_box','guitar','keyboard','lamp',
+      'laptop','mantel','monitor','night_stand','person','piano','plant','radio','range_hood','sink',
+      'sofa','stairs','stool','table','tent','toilet','tv_stand','vase','wardrobe','xbox'],
+      currentPage:1,
+      pageTotall:0,
+      // serverurl:'http://www.hiksea.com:8091'
+      serverurl:'http://127.0.0.1:5001'
+    },
+    mounted(){
+      this.init()
+    },
+    methods: {
+      init(){
+        var that = this;
+        axios.get(that.serverurl + '/getModels' , {
+          // params: { 'filename': fname[0] },
+          // responseType: 'blob'
+        }).then(function (response) {
+          that.models = response.data.modelList;
+          that.selected = response.data.nowModel;
+          // window.open(response.request.responseURL)
+        }).catch(function (error) {
+          // console.log(error);
+          window.alert(error);
+        });
+
+      },
+
+      changeModel:function(){
+        $('#exportbtn').attr('disabled',"true");
+        var that = this;
+        //reset
+        that.results = [];
+        that.uping2 = 0;
+        that.predictRes = '';
+        $(".pagination").empty();
+        axios.get(that.serverurl + '/setModels' , {
+          params: { 'modelname':  that.selected},
+          // responseType: 'blob'
+        }).then(function (response) {
+          that.uping0 = 1;
+          // that.selected = response.data.modelname
+          console.log(response)
+        }).catch(function (error) {
+          // console.log(error);
+          window.alert(error);
+        });
+      },
+
+      upload: function () {
+        var that = this;
+        if(that.uping1 == 1){
+          window.alert('正在上传中，请等待！');
+          return;
+        }
+        if(that.upath == ''){
+          window.alert('请选择文件');
+          return;
+        }
+        that.results = [];//清空原数据
+        $(".pagination").empty();
+        var zipFormData = new FormData();//创建form对象 
+        zipFormData.append('filename', that.upath);//filename是键，file是值，就是要传的文件
+        //reset the value
+        that.uping0 = 0;
+        that.uping1 = 1;
+        that.uping2 = 0;
+        that.currentPage = 1;
+        axios.post(that.serverurl + '/upload', zipFormData, {
+          headers: { 
+            'Content-Type': 'multipart/form-data'
+            }
+          })
+          .then(function (response) {
+            console.log(response);
+            that.predictRes = "准确率" + (100 * response.data.accracy).toFixed(2) +'%';
+            $('#exportbtn').removeAttr("disabled");
+            that.uping1 = 0;
+            // show the prediction list data
+            for(var i=0;i<10;i++){
+              that.results.push({object1:response.data.result[i][0],
+              probability:response.data.result[i][1],
+              object2:response.data.result[i][2]})
+              if(i+1 == response.data.result.length){
+                break;
+              }
+            }
+            // console.log(that.results);
+            that.pageTotall = response.data.totalPages;
+            that.addPageHtml($(".pagination"),that.currentPage,that.pageTotall);//add pagination html
+            that.addNewsPageEvent();
+          })
+          .catch(function (error) {
+            that.predictRes = '网络错误，请重传';
+            console.log(error);
+            // window.alert(error);
+          });  
+      },
+
+      getFile: function (even) {
+        this.upath = event.target.files[0];
+        var filetype = this.upath.name.split(".");
+        if(filetype[1] != 'h5'){
+          this.upath = '';
+          window.alert('请上传hdf5文件');
+          return;
+        }
+        // console.log(this.upath);
+        this.Filename = this.upath.name;
+      },
+
+      exportExcel:function(){
+        var that = this;
+        var fname = that.Filename.split(".")
+        if(fname == '点击这里上传hdf5文件' || that.predictRes == ''){
+          window.alert("暂无导出的excel表格");
+          return
+        }
+        axios.get(that.serverurl + '/generateExcel', {
+          params: { 
+            'nowModel':that.selected,
+            'filename': fname[0] },
+          responseType: 'blob'
+        }).then(function (response) {
+          window.open(response.request.responseURL);
+          that.uping2 = 1;
+          console.log(response)
+        }).catch(function (error) {
+          // console.log(error);
+          window.alert(error);
+        });
+      },
+
+      requestData:function(){
+        var that = this;
+        axios.get(that.serverurl + '/pagedata', {
+          params: { 'pageIndex': that.currentPage }
+        }).then(function (response) {
+          console.log(response);
+          that.results = [];
+          for (var i = 0; i < response.data.length ; i++) {
+            that.results.push({
+              object1: response.data[i][0],
+              probability: response.data[i][1],
+              object2: response.data[i][2]
+            })
+          }
+        }).catch(function (error) {
+          // console.log(error);
+          window.alert(error);
+        });
+        that.addPageHtml($(".pagination"), that.currentPage, that.pageTotall);//add pagination html
+        that.addNewsPageEvent();
+      },
+
+      goToDraw:function(even){
+        console.log(Number(even.target.innerText)-1);
+        url = "draw2.html?id=" + (Number(even.target.innerText)-1);
+        window.open(url);
+      },
+
+      addPageHtml:function(obj, current, pageNum){
+        obj.empty();
+        /*上一页*/
+        obj.append('<li><a id="pre_btn"><<</a></li>');
+        if(current == 1){
+          $("#pre_btn").attr("disabled", true);
+          $("#pre_btn").css("pointer-events", "none");
+        }
+        /* 中间页 */
+        if (pageNum < 8) {
+          for (var i = 1; i <= pageNum; i++) {
+            if (i == current) {
+              obj.append('<li><a class="active">' + i + '</a></li>');
+              continue;
+            }
+            obj.append('<li><a class="pagenum">' + i + '</a></li>');
+          }
+        }
+        if (pageNum >= 8) {
+          if (current > 4 && pageNum > 4) {
+            obj.append('<li><a class="pagenum">' + 1 + '</a></li>');
+            obj.append('<li><a class="pagenum">' + 2 + '</a></li>');
+            obj.append('<li><a id="dot1"><span>...</span></a></li>');
+          }
+          /*中间页*/
+          if (current > 4 && current <= pageNum - 3) {
+            var start = current - 1, end = current + 1;
+          } else if (current > 4 && current > pageNum - 3) {
+            var start = pageNum - 3, end = pageNum;
+          } else {
+            var start = 1, end = 7;
+          }
+          for (; start <= end; start++) {
+            if (start <= pageNum && start >= 1) {
+              if (start == current) {
+                obj.append('<li><a class="active">' + start + '</a></li>');
+              } else if (start == current + 1) {
+                obj.append('<li><a class="pagenum">' + start + '</a></li>');
+              } else {
+                obj.append('<li><a class="pagenum">' + start + '</a></li>');
+              }
+            }
+          }
+          if (end < pageNum) {
+            if (end != (pageNum - 1)) {
+              obj.append('<li><a id="dot2"><span>...</span></a></li>');
+            }
+            obj.append('<li><a class="pagenum">' + pageNum + '</a></li>');
+          }
+        }
+        /*下一页*/
+        obj.append('<li><a id="next_btn">>></a></li>');
+        if (current == pageNum) {
+          $("#next_btn").attr("disabled", true);
+          $("#next_btn").css("pointer-events", "none");
+        }
+      },
+
+      addNewsPageEvent:function(){
+        var that = this;
+          $("#pre_btn").click(function () {
+            --that.currentPage; //除去上一页btn
+            console.log(that.currentPage);
+            that.requestData(); //添加新的news
+          });
+
+          $("#next_btn").click(function () {
+            ++that.currentPage; //除去上一页btn
+            console.log(that.currentPage);
+            that.requestData(); //添加新的news
+          });
+
+          $(".pagenum").click(function () {
+            var currentPageString = $(this).text().trim();
+            that.currentPage = Number(currentPageString);
+            console.log(that.currentPage);
+            that.requestData();
+          });
+          console.log("event finished!");
+      },
+
+    }
+  });
+
+</script>
+</body>
+</html>

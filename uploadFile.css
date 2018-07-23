@@ -1,0 +1,206 @@
+
+button,input{ 
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+    }
+body{
+    margin: 0;
+    width: 100%;
+    height: 100%;
+/* background-color:rgb(11, 15, 21); */
+}
+.bg img{
+    margin: 0;
+    width: 100%;
+    height: 100%;
+}
+#app{
+    position: fixed;
+    top: 5%;
+    width: 100%;
+    height: 800px;
+    margin: 20px auto;
+    text-align: center;
+}
+.buttonswrap{
+    width: 100%;
+    height: 80px;
+    margin:40px 15%;
+}
+.btnwrapper{
+    height: 30px;
+    width: 22%;
+    background: white;
+    float: left;
+    margin-right: 20px;
+    border-radius: 2px;
+}
+#mymodel .icons{
+    width: 30px;
+    height: 30px;
+    /* vertical-align: middle; */
+    position: absolute;
+    line-height: 30px;
+    z-index: 99;
+}
+#mymodel .icons img{
+    width: 16px;
+    height: 16px;
+}
+#mymodel select{
+    /* font-family: "微软雅黑"; */
+    /* margin:100px; */
+    background: rgba(0,0,0,0);
+    width: 70px;
+    height: 30px;
+    font-size: 12pt;
+    color: white;
+    text-align: center;
+    border: none;
+    border-radius: 2px;
+    float: left;
+}
+#mymodel span{
+    width: 100px;
+    line-height: 30px;
+    color: #888;
+}
+#mymodel select option{
+    color: #888;
+    background: #A6E1EC;
+    line-height: 30px;
+}
+#mymodel select:focus{
+    border: 2px #ddd solid;
+    box-shadow: 0 0 15px 1px #DDDDDD;
+}
+option:hover{
+    color: white;
+    background: #6699ff;
+}
+.inputfile{
+    line-height: 30px;
+    position: relative;
+    cursor: pointer;
+    /* color: #888; */
+    color: #888;
+    /* overflow: hidden; */
+    /* display: inline-block; */
+    *display: inline;
+    *zoom: 1
+}
+.inputfile input{
+    width: 230px;
+    height: 30px;
+    position: absolute;
+    font-size: 12pt;
+    left: 0;
+    top: 0;
+    opacity: 0;
+    filter: alpha(opacity=0);
+    cursor: pointer;
+    border:none;
+}
+button{
+    height: 30px;
+    color: white;
+    background: #6699ff;
+    border-radius: 2px;
+    float: right;
+    border:none;
+    box-shadow: none;
+    outline: none;
+}
+#app .title_txt{
+    font-size: 30pt;
+    color:white;
+}
+.txt1{
+    font-size: 12pt;
+    color: #888;
+    text-align: center;
+    /*
+    height: 100px;
+    background-color: lightskyblue;
+    opacity: 0.5; */
+}
+.showres{
+    width: 230px;
+    height: 30px;
+    line-height: 30px;
+    float: left;
+}
+/* #exportbtn{
+    width: 15%;
+    height: 15%;
+} */
+.hintwrap{
+    width: 70%;
+    height: 20px;
+    margin-top: 20px;
+    text-align: center;
+    float: left;
+}
+.hintwrapper{
+    height: 30px;
+    width: 100%;
+    color:white;
+    float: left;
+    margin-right: 20px;
+    border-radius: 2px;
+}
+#app .mask{
+    position: fixed;
+    top:34%;
+    left: 15%;
+    width: 70%;
+    height: 480px;
+    background: #000;
+    opacity: 0.4;
+    border-radius: 4px;
+}
+#app .predictionlist{
+    position: fixed;
+    top:34%;
+    left: 15%;
+    width: 70%;
+    height: 480px;
+}
+#app ul li{
+    color: white;
+    list-style:none;
+    font-size: 14pt;
+    text-align: center;
+}
+#app ul li .reswrap1{
+    width: 18%;
+    margin-bottom: 8px;
+    float: left;
+}
+#app ul li .reswrap1 a{
+    color: white;
+    text-decoration: underline;
+}
+#app ul li .reswrap2{
+    width: 14%;
+    margin-left: 14px;
+    margin-bottom: 8px;
+    float: left;
+    text-align: left;
+}
+#app ul li .reswrap{
+    width: 18%;
+    margin-left: 12px;
+    margin-bottom: 8px;
+    float: left;
+}
+#app ul li .txtalign{
+    text-align: center;
+}
+footer{
+    position: fixed;
+    top: 96%;
+    color: white;
+    font-size: 8pt;
+    text-align: center;
+    width: 100%;
+}
